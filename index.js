@@ -4,49 +4,34 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
 import cookieParser from 'cookie-parser';
-//import adminRoutes from './routes/admin.route.js';
 
 dotenv.config();
 
-mongoose.connect(process.env.MONGO).then(() => {
+const MONGO = process.env.MONGO;
+if (!MONGO) {
+  console.error('MongoDB connection string is missing in environment variables.');
+  process.exit(1);
+}
+
+mongoose
+  .connect(MONGO)
+  .then(() => {
     console.log('Connected to MongoDB');
-}).catch((error) => {
-    console.log(error);
-});
+  })
+  .catch((error) => {
+    console.error('Failed to connect to MongoDB:', error);
+    process.exit(1);
+  });
 
 const app = express();
-
-/*mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useCreateIndex: true,
-});*/
-
-
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
-});
+app.use('/backend/user', userRoutes);
+app.use('/backend/auth', authRoutes);
 
-app.use("/backend/user", userRoutes);
-app.use("/backend/auth", authRoutes);
-//app.use('/backend/admin', adminRoutes);
-
-app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-  return res.status(statusCode).json({ 
-    success: false,
-    message,
-    statusCode,
-  });
-}
-);
-
-// Start the server
-app.listen(5000, () => {
-  console.log('Server is running on port 5000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
